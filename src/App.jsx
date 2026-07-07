@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ChevronRight, Loader2, CheckCircle2, LogOut, Home, CreditCard, UserCircle, Upload, Sparkles, Check, Clock, AlertCircle, Download, LayoutDashboard, Users, Receipt, Settings, Search, ThumbsUp, ThumbsDown, Pencil, Save, X } from "lucide-react";
 import logoUrl from "./assets/logo.js";
+import heroUrl from "./assets/hero.js";
 
 /* ============================= SUPABASE ============================= */
 const SUPABASE_URL = "https://hbykvtwefvhgayfnqjbl.supabase.co";
@@ -132,7 +133,9 @@ function Landing({ onEnter }) {
         <Star key={i} style={{ position: "absolute", top, left }} />
       ))}
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "70px 24px 60px", textAlign: "center", position: "relative" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Logo size={440} bordered={false} /></div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+          <img src={heroUrl} alt="Bloco Cecílias e Buarques" style={{ width: "100%", maxWidth: 420, height: "auto" }} />
+        </div>
         <Ribbon>Sistema de Gestão de Integrantes</Ribbon>
         <div style={{ marginTop: 32 }}>
           <button
@@ -800,10 +803,10 @@ function AdminDashboard() {
     const mes = new Date().getMonth() + 1;
     const vencimento = `${ano}-${String(mes).padStart(2, "0")}-${String(diaVenc).padStart(2, "0")}`;
 
-    const { data: ativos } = await supabase.from("profiles").select("id, valor_mensalidade, categoria").eq("ativo", true);
+    const { data: ativos } = await supabase.from("profiles").select("id, valor_mensalidade, bolsista").eq("ativo", true);
 
     const rows = (ativos || [])
-      .filter((p) => p.categoria !== "convidado_isento")
+      .filter((p) => !p.bolsista)
       .map((p) => ({
         profile_id: p.id,
         competencia: comp,
@@ -873,10 +876,11 @@ function AdminDashboard() {
 
 const CAMPOS_VAZIOS = {
   nome: "", email: "", telefone: "", cpf: "", endereco: "", instrumento: "",
-  categoria: "integrante", valor_mensalidade: 140, ativo: false,
+  valor_mensalidade: 140, ativo: false,
+  bolsista: false, eh_admin: false,
 };
 
-function IntegranteForm({ inicial, onSalvar, onCancelar, salvando, erro, ehNovo }) {
+function IntegranteForm({ inicial, onSalvar, onCancelar, salvando, erro, ehNovo, isMasterAdmin }) {
   const [form, setForm] = useState(inicial);
 
   function set(campo, valor) {
@@ -937,22 +941,51 @@ function IntegranteForm({ inicial, onSalvar, onCancelar, salvando, erro, ehNovo 
           <input value={form.instrumento || ""} onChange={(e) => set("instrumento", e.target.value)} style={inputStylePerfil} />
         </div>
         <div>
-          <label style={labelStyle}>Categoria</label>
-          <select value={form.categoria} onChange={(e) => set("categoria", e.target.value)} style={inputStylePerfil}>
-            <option value="integrante">integrante</option>
-            <option value="diretoria">diretoria</option>
-            <option value="convidado_isento">convidado_isento</option>
-          </select>
-        </div>
-        <div>
           <label style={labelStyle}>Mensalidade (R$)</label>
-          <input type="number" step="0.01" value={form.valor_mensalidade} onChange={(e) => set("valor_mensalidade", e.target.value)} style={inputStylePerfil} />
+          <input
+            type="number" step="0.01"
+            value={form.bolsista ? 0 : form.valor_mensalidade}
+            onChange={(e) => set("valor_mensalidade", e.target.value)}
+            disabled={form.bolsista}
+            style={form.bolsista ? { ...inputStylePerfil, background: "#F0EAE0", color: "#8A9689" } : inputStylePerfil}
+          />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
           <input type="checkbox" checked={form.ativo} onChange={(e) => set("ativo", e.target.checked)} style={{ width: 18, height: 18 }} />
           <label style={{ ...labelStyle, marginTop: 0 }}>Conta ativa</label>
         </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <input
+            type="checkbox"
+            checked={form.bolsista}
+            onChange={(e) => set("bolsista", e.target.checked)}
+            style={{ width: 18, height: 18 }}
+          />
+          <label style={{ ...labelStyle, marginTop: 0 }}>Bolsista (isento de mensalidade)</label>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+          <input
+            type="checkbox"
+            checked={form.eh_admin}
+            onChange={(e) => set("eh_admin", e.target.checked)}
+            disabled={!isMasterAdmin}
+            style={{ width: 18, height: 18 }}
+          />
+          <label style={{ ...labelStyle, marginTop: 0 }}>Admin</label>
+        </div>
       </div>
+
+      {!isMasterAdmin && (
+        <div style={{ fontSize: 11, color: "#94A395", marginTop: 10 }}>
+          Só o master admin pode conceder ou remover acesso de administrador.
+        </div>
+      )}
+
+      {form.eh_admin && !inicial.auth_user_id && (
+        <div style={{ fontSize: 11.5, color: "#B5720B", marginTop: 10, background: "#FBE9CF", padding: "8px 12px", borderRadius: 8 }}>
+          Essa pessoa ainda não ativou a conta — o acesso de admin é concedido automaticamente assim que ela ativar (email + senha 123456).
+        </div>
+      )}
 
       {ehNovo && (
         <div style={{ fontSize: 11.5, color: "#94A395", marginTop: 6, marginBottom: 10 }}>
@@ -976,7 +1009,7 @@ function IntegranteForm({ inicial, onSalvar, onCancelar, salvando, erro, ehNovo 
   );
 }
 
-function AdminIntegrantes() {
+function AdminIntegrantes({ isMasterAdmin }) {
   const [membros, setMembros] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -1003,9 +1036,10 @@ function AdminIntegrantes() {
         cpf: form.cpf || null,
         endereco: form.endereco || null,
         instrumento: form.instrumento || null,
-        categoria: form.categoria,
-        valor_mensalidade: form.valor_mensalidade,
+        valor_mensalidade: form.bolsista ? 0 : form.valor_mensalidade,
         ativo: form.ativo,
+        bolsista: form.bolsista,
+        eh_admin: form.eh_admin,
       });
       if (error) {
         setErro(error.message.includes("duplicate") ? "Já existe um cadastro com esse email." : error.message);
@@ -1020,7 +1054,7 @@ function AdminIntegrantes() {
     }
   }
 
-  async function salvarEdicao(id, form) {
+  async function salvarEdicao(membroOriginal, form) {
     setSalvando(true);
     setErro("");
     try {
@@ -1030,14 +1064,30 @@ function AdminIntegrantes() {
         cpf: form.cpf || null,
         endereco: form.endereco || null,
         instrumento: form.instrumento || null,
-        categoria: form.categoria,
-        valor_mensalidade: form.valor_mensalidade,
+        valor_mensalidade: form.bolsista ? 0 : form.valor_mensalidade,
         ativo: form.ativo,
-      }).eq("id", id);
+        bolsista: form.bolsista,
+        eh_admin: form.eh_admin,
+      }).eq("id", membroOriginal.id);
       if (error) {
         setErro(error.message);
         return;
       }
+
+      // Sincroniza o papel real em user_roles — só se for master admin e
+      // a pessoa já tiver ativado a conta (auth_user_id existe). Se ainda
+      // não ativou, o flag eh_admin já foi salvo acima e a Edge Function
+      // de ativação concede o papel sozinha na hora certa.
+      if (isMasterAdmin && membroOriginal.auth_user_id && form.eh_admin !== membroOriginal.eh_admin) {
+        if (form.eh_admin) {
+          await supabase.from("user_roles").insert({ auth_user_id: membroOriginal.auth_user_id, role: "admin" });
+        } else {
+          await supabase.from("user_roles").delete()
+            .eq("auth_user_id", membroOriginal.auth_user_id)
+            .eq("role", "admin");
+        }
+      }
+
       setModo(null);
       carregar();
     } catch (e) {
@@ -1065,6 +1115,7 @@ function AdminIntegrantes() {
         <IntegranteForm
           inicial={CAMPOS_VAZIOS}
           ehNovo
+          isMasterAdmin={isMasterAdmin}
           salvando={salvando}
           erro={erro}
           onSalvar={salvarNovo}
@@ -1075,9 +1126,10 @@ function AdminIntegrantes() {
       {modo && modo !== "novo" && (
         <IntegranteForm
           inicial={{ ...modo, _ativoOriginal: modo.ativo }}
+          isMasterAdmin={isMasterAdmin}
           salvando={salvando}
           erro={erro}
-          onSalvar={(form) => salvarEdicao(modo.id, form)}
+          onSalvar={(form) => salvarEdicao(modo, form)}
           onCancelar={() => { setModo(null); setErro(""); }}
         />
       )}
@@ -1092,7 +1144,7 @@ function AdminIntegrantes() {
       ) : (
         <Card style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 1fr 0.9fr 0.7fr 60px", padding: "10px 16px", background: C.cream, fontSize: 11, fontWeight: 800, color: "#5A6B5C" }}>
-            <div>NOME</div><div>TELEFONE</div><div>CATEGORIA</div><div>MENSALIDADE</div><div>ATIVO</div><div></div>
+            <div>NOME</div><div>TELEFONE</div><div>SELOS</div><div>MENSALIDADE</div><div>ATIVO</div><div></div>
           </div>
           {filtrados.map((m) => (
             <div key={m.id} style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr 1fr 0.9fr 0.7fr 60px", alignItems: "center", padding: "10px 16px", borderTop: `1px solid ${C.creamDark}`, fontSize: 13 }}>
@@ -1101,7 +1153,15 @@ function AdminIntegrantes() {
                 <div style={{ fontSize: 11.5, color: "#94A395" }}>{m.email}</div>
               </div>
               <div style={{ color: "#5A6B5C" }}>{m.telefone || "—"}</div>
-              <div style={{ color: "#5A6B5C" }}>{m.categoria}</div>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {m.eh_admin && (
+                  <span style={{ background: "#DCE6F5", color: "#2A5D9F", fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 999 }}>Admin</span>
+                )}
+                {m.bolsista && (
+                  <span style={{ background: "#F0E4F7", color: "#7B3FA0", fontWeight: 700, fontSize: 11, padding: "3px 9px", borderRadius: 999 }}>Bolsista</span>
+                )}
+                {!m.eh_admin && !m.bolsista && <span style={{ color: "#C7CFC8", fontSize: 11 }}>—</span>}
+              </div>
               <div style={{ fontWeight: 700 }}>{formatBRL(m.valor_mensalidade)}</div>
               <div>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: m.ativo ? "#DDEFD2" : "#E4E4E4", color: m.ativo ? C.leafGreen : "#777", fontWeight: 700, fontSize: 12.5, padding: "5px 12px", borderRadius: 999 }}>
@@ -1307,7 +1367,7 @@ function Painel({ session, onLogout }) {
     return (
       <AdminShell page={page} setPage={setPage} onLogout={onLogout} pendentesCount={pendentesCount}>
         {page === "admin-dashboard" && <AdminDashboard />}
-        {page === "admin-integrantes" && <AdminIntegrantes />}
+        {page === "admin-integrantes" && <AdminIntegrantes isMasterAdmin={isMasterAdmin} />}
         {page === "admin-comprovantes" && <AdminComprovantes adminProfile={profile} />}
         {page === "admin-config" && <AdminConfig isMasterAdmin={isMasterAdmin} />}
       </AdminShell>
