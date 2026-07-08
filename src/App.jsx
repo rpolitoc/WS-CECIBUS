@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ChevronRight, Loader2, CheckCircle2, LogOut, Home, CreditCard, UserCircle, Upload, Sparkles, Check, Clock, AlertCircle, Download, LayoutDashboard, Users, Receipt, Settings, Search, ThumbsUp, ThumbsDown, Pencil, Save, X } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import logoUrl from "./assets/logo.js";
 import wordmarkUrl from "./assets/wordmark.js";
 import landingArtUrl from "./assets/landingArt.js";
@@ -1424,6 +1425,7 @@ export default function App() {
         input:focus { outline: 2px solid ${C.leafGreen}; outline-offset: 1px; }
       `}</style>
       {content}
+      <Analytics />
     </div>
   );
 }

@@ -3,3 +3,4 @@ dist
 bundle.html
 .parcel-cache
 .parcel-report.json
+*.tsbuildinfo
