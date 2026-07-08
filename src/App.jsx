@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { ChevronRight, Loader2, CheckCircle2, LogOut, Home, CreditCard, UserCircle, Upload, Sparkles, Check, Clock, AlertCircle, Download, LayoutDashboard, Users, Receipt, Settings, Search, ThumbsUp, ThumbsDown, Pencil, Save, X } from "lucide-react";
 import logoUrl from "./assets/logo.js";
+import wordmarkUrl from "./assets/wordmark.js";
+import landingArtUrl from "./assets/landingArt.js";
 import heroUrl from "./assets/hero.js";
 
 /* ============================= SUPABASE ============================= */
@@ -126,32 +128,18 @@ const labelStyle = { fontSize: 12.5, fontWeight: 700, color: C.darkGreen };
 
 function Landing({ onEnter }) {
   return (
-    <div style={{ background: C.orange, minHeight: "100vh", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 20, left: 20 }}><PalmLeaf size={70} /></div>
-      <div style={{ position: "absolute", top: 10, right: 10 }}><PalmLeaf flip size={90} /></div>
-      {[[60, 90], [140, 60], [700, 80], [640, 160]].map(([top, left], i) => (
-        <Star key={i} style={{ position: "absolute", top, left }} />
-      ))}
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "70px 24px 60px", textAlign: "center", position: "relative" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-          <img src={heroUrl} alt="Bloco Cecílias e Buarques" style={{ width: "100%", maxWidth: 420, height: "auto" }} />
-        </div>
-        <Ribbon>Sistema de Gestão de Integrantes</Ribbon>
-        <div style={{ marginTop: 32 }}>
-          <button
-            onClick={onEnter}
-            style={{
-              background: C.orange, color: C.cream, border: `2px solid ${C.nearBlack}`,
-              fontFamily: "'Work Sans', sans-serif", fontWeight: 700, padding: "14px 32px",
-              borderRadius: 10, fontSize: 16, cursor: "pointer", display: "inline-flex",
-              alignItems: "center", gap: 8, boxShadow: "0 3px 0 " + C.nearBlack,
-            }}
-          >
-            Entrar <ChevronRight size={18} />
-          </button>
-        </div>
+    <div style={{ height: "100vh", width: "100vw", background: "#173323", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      <div style={{ position: "relative", maxWidth: "100%", maxHeight: "100vh", lineHeight: 0 }}>
+        <img src={landingArtUrl} alt="Bloco Cecílias e Buarques" style={{ maxWidth: "100%", maxHeight: "100vh", width: "auto", height: "auto", display: "block" }} />
+        <button
+          onClick={onEnter}
+          aria-label="Bateria Melhor Agora - Entrar"
+          style={{
+            position: "absolute", top: "2.0%", left: "73.5%", width: "22%", height: "4.2%",
+            background: "transparent", border: "none", cursor: "pointer",
+          }}
+        />
       </div>
-      <SnakeStrip bg={C.darkGreen} color1={C.cream} color2={C.orange} height={26} />
     </div>
   );
 }
@@ -237,8 +225,8 @@ function Auth({ onSession }) {
     <div style={{ minHeight: "100vh", display: "flex" }}>
       <div style={{ flex: 1, background: C.darkGreen, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 30, position: "relative", overflow: "hidden" }}>
         <div style={{ position: "absolute", top: 20, left: 20 }}><PalmLeaf size={60} color={C.orange} /></div>
-        <Logo size={135} />
-        <h2 style={{ fontFamily: "'Anton', sans-serif", color: C.cream, fontSize: 28, marginTop: 18, textAlign: "center" }}>
+        <img src={wordmarkUrl} alt="Bloco Cecílias e Buarques" style={{ width: "100%", maxWidth: 280, height: "auto" }} />
+        <h2 style={{ fontFamily: "'Anton', sans-serif", color: C.cream, fontSize: 28, marginTop: 22, textAlign: "center" }}>
           SEJA BEM VINDO
         </h2>
       </div>
@@ -410,8 +398,7 @@ function MemberShell({ page, setPage, children, onLogout }) {
       <div style={{ background: C.darkGreen }}>
         <div style={{ maxWidth: 900, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Logo size={40} />
-            <div style={{ color: C.cream, fontFamily: "'Anton', sans-serif", fontSize: 15 }}>PORTAL DO INTEGRANTE</div>
+            <img src={wordmarkUrl} alt="Bloco Cecílias e Buarques" style={{ height: 34, width: "auto" }} />
           </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {nav.map((n) => {
@@ -692,12 +679,8 @@ function AdminShell({ page, setPage, children, onLogout, pendentesCount }) {
   return (
     <div style={{ minHeight: "100vh", background: "#FBF6ED", display: "flex" }}>
       <div style={{ width: 220, background: C.nearBlack, color: C.cream, flexShrink: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "20px 16px", display: "flex", alignItems: "center", gap: 10, borderBottom: "1px solid #2C3F30" }}>
-          <Logo size={38} />
-          <div>
-            <div style={{ fontFamily: "'Anton', sans-serif", fontSize: 13 }}>CECÍLIAS</div>
-            <div style={{ fontSize: 10, color: "#9CB09E", fontWeight: 700 }}>DIRETORIA</div>
-          </div>
+        <div style={{ padding: "18px 16px", display: "flex", alignItems: "center", borderBottom: "1px solid #2C3F30" }}>
+          <img src={wordmarkUrl} alt="Bloco Cecílias e Buarques" style={{ width: "100%", maxWidth: 170, height: "auto" }} />
         </div>
         <div style={{ padding: "14px 10px", flex: 1 }}>
           {nav.map((n) => {
