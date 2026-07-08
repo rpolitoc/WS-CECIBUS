@@ -457,37 +457,38 @@ function Inicio({ profile }) {
     carregarCobrancaAtual();
   }, [profile.id]);
 
-  async function simularEnvioComprovante() {
-    if (!due) return;
+  async function enviarComprovante(e) {
+    const file = e.target.files?.[0];
+    if (!file || !due) return;
+
     setErro("");
     setStep("uploading");
-    await new Promise((r) => setTimeout(r, 1000));
-    setStep("ocr");
-    await new Promise((r) => setTimeout(r, 1200));
 
-    // SIMULAÇÃO — o OCR de verdade (Gemini) entra numa etapa futura.
-    // Por ora, assume que o valor sempre bate, pra validar o fluxo ponta a ponta.
-    const { error: proofErr } = await supabase.from("payment_proofs").insert({
-      monthly_due_id: due.id,
-      valor_detectado: due.valor_esperado,
-      data_detectada: new Date().toISOString().slice(0, 10),
-      bateu_com_esperado: true,
-      aprovacao_automatica: true,
-      status: "pago",
+    // Converte a imagem pra base64 (só em memória, nunca salva em disco/storage).
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
 
-    if (proofErr) {
-      setErro("Não consegui registrar o comprovante. Tenta de novo.");
+    setStep("ocr");
+
+    const { data, error: fnErr } = await supabase.functions.invoke("validar-comprovante", {
+      body: {
+        monthly_due_id: due.id,
+        imagem_base64: base64,
+        mime_type: file.type || "image/jpeg",
+      },
+    });
+
+    if (fnErr || data?.error) {
+      setErro("Não consegui processar o comprovante. Tenta de novo em alguns segundos.");
       setStep("idle");
       return;
     }
 
-    await supabase
-      .from("monthly_dues")
-      .update({ status: "pago", pago_em: new Date().toISOString() })
-      .eq("id", due.id);
-
-    setStep("done");
+    setStep(data.bateu ? "done" : "aguardando");
     carregarCobrancaAtual();
   }
 
@@ -518,7 +519,7 @@ function Inicio({ profile }) {
 
           {due.status === "pendente" && step === "idle" && (
             <label style={{ display: "inline-block", marginTop: 18, cursor: "pointer" }}>
-              <input type="file" accept="image/*" style={{ display: "none" }} onChange={simularEnvioComprovante} />
+              <input type="file" accept="image/*" style={{ display: "none" }} onChange={enviarComprovante} />
               <span style={{ background: C.orange, color: C.cream, border: `2px solid ${C.nearBlack}`, fontWeight: 700, padding: "12px 26px", borderRadius: 10, fontSize: 15, display: "inline-flex", alignItems: "center", gap: 8, boxShadow: "0 3px 0 " + C.nearBlack }}>
                 <Upload size={16} /> Enviar comprovante
               </span>
@@ -531,12 +532,17 @@ function Inicio({ profile }) {
           )}
           {step === "ocr" && (
             <div style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 10, color: C.cream, fontSize: 13.5, fontWeight: 700 }}>
-              <Sparkles size={18} /> Lendo valor e data (OCR simulado)...
+              <Sparkles size={18} /> Lendo valor e data com IA...
             </div>
           )}
           {step === "done" && (
             <div style={{ marginTop: 18, background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 14, color: C.cream, fontSize: 13 }}>
-              ✓ Comprovante registrado e aprovado automaticamente.
+              ✓ Comprovante lido e aprovado automaticamente.
+            </div>
+          )}
+          {step === "aguardando" && (
+            <div style={{ marginTop: 18, background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 14, color: C.cream, fontSize: 13 }}>
+              ⏳ Recebemos seu comprovante, mas o valor não bateu automaticamente. A diretoria vai conferir manualmente.
             </div>
           )}
           {erro && <div style={{ marginTop: 12, color: "#F7B9A6", fontSize: 13 }}>{erro}</div>}
